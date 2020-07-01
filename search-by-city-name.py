@@ -1,6 +1,9 @@
 import requests
 from config import api_key
 
+# Grab OpenWeather API key from environment variables
+# api_key = os.environ.get('OW_API_KEY', None)
+
 # Base URL for API access
 base_url = "http://api.openweathermap.org/data/2.5/weather"
 
