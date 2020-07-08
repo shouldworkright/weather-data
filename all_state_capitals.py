@@ -4,6 +4,7 @@ from datetime import datetime
 from bs4 import BeautifulSoup
 from config import api_key
 
+# Prints OpenWeather API data for a specific city
 def print_city_data(city_name):
 
     # Base URL for API access
