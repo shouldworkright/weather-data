@@ -1,18 +1,17 @@
 # Import libraries
 import requests
 from datetime import datetime
-from config import api_key
+from bs4 import BeautifulSoup
+from config import ow_api_key
 
-def main():
+# Prints OpenWeather API data for a specified city
+def city_data(city_name):
 
     # Base URL for API access
     base_url = "http://api.openweathermap.org/data/2.5/weather"
 
-    # Prompt user to enter city name
-    city_name = input("\n\tEnter city name: ")
-
     # Append data to URL
-    complete_url = base_url + "?q=" + city_name + "&units=imperial&appid=" + api_key
+    complete_url = base_url + "?q=" + city_name + ",us&units=imperial&appid=" + ow_api_key
 
     # Pull data from OpenWeather API for specified city
     response = requests.get(complete_url)
@@ -22,8 +21,9 @@ def main():
 
     if data["cod"] != "404":
 
-        # Grab city name from API
+        # Grab city name and country name from API
         city_name = data["name"]
+        country_name = iso_conversion(data["sys"]["country"])  # 2-letter ISO string converted to country's full name
 
         # Get the current date and time
         date = datetime.date(datetime.now())
@@ -43,26 +43,68 @@ def main():
 
         # Print all data
         print("\n\tCity: " +
-                str(city_name) +
+              str(city_name) +
+              "\n\tCountry: " +
+              str(country_name) +
               "\n\tDate: " +
-                str(date) +
+              str(date) +
               "\n\tTime: " +
-                str(time) +
+              str(time) +
               "\n\tWeather: " +
-                str(weather_desc) +
+              str(weather_desc) +
               "\n\tCurrent Temperature (Farenheit): " +
-                str(current_temp) +
+              str(current_temp) +
               "\n\tHigh (Farenheit): " +
-                str(max_temp) +
+              str(max_temp) +
               "\n\tLow (Farenheit): " +
-                str(min_temp) +
+              str(min_temp) +
               "\n\tAtmospheric Pressure (hPa): " +
-                str(pressure) +
+              str(pressure) +
               "\n\tHumidity (Percentage): " +
-                str(humidity))
+              str(humidity))
 
     else:
         print("\n\tERROR: City Not Found")
+
+# Returns a country's full name as a string when passed a 2 letter ISO 3166-1 Alpha-2 country code
+def iso_conversion(user_iso_code):
+
+    # URL for web-scraping text data
+    url = "https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2#Officially_assigned_code_elements"
+
+    # Fetch and parse raw HTML content from the URL
+    html_content = requests.get(url).text
+    soup = BeautifulSoup(html_content, "html5lib")
+
+    # Get the second table from the HTML file
+    table = soup.find_all("table")[2]
+
+    # Get all rows from the table
+    table_data = table.findChildren("tr")
+
+    for row in table_data:
+
+        # Get cells from current table row
+        cells = row.findAll("td")
+
+        # Only search rows that have cells
+        if len(cells) > 0:
+
+            # Get ISO code and full name of corresponding country
+            web_iso_code = cells[0].text.strip()
+            country = cells[1].text.strip()
+
+            # If user-input ISO code has a match, return the country's full name
+            if user_iso_code == web_iso_code:
+                return country
+
+def main():
+
+    print("\n\tCURRENT WEATHER DATA FOR ANY U.S. CITY")
+
+    # Prompt user to enter city name
+    city_name = input("\n\tSearch By Name: ")
+    city_data(city_name)
 
 if __name__ == "__main__":
     main()
