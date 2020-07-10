@@ -4,7 +4,7 @@ from datetime import datetime
 from bs4 import BeautifulSoup
 from config import ow_api_key
 
-# Prints OpenWeather API data for a specified city
+# Prints OpenWeather API data for a specified U.S. city
 def city_data(city_name):
 
     # Base URL for API access
@@ -22,7 +22,7 @@ def city_data(city_name):
     if data["cod"] != "404":
 
         # Grab city name and country name from API
-        city_name = data["name"]
+        location_name = data["name"]
         country_name = iso_conversion(data["sys"]["country"])  # 2-letter ISO string converted to country's full name
 
         # Get the current date and time
@@ -42,8 +42,8 @@ def city_data(city_name):
         weather_desc = weather[0]["description"]  # Description of weather
 
         # Print all data
-        print("\n\tCity: " +
-              str(city_name) +
+        print("\n\tLocation: " +
+              str(location_name) +
               "\n\tCountry: " +
               str(country_name) +
               "\n\tDate: " +
@@ -109,26 +109,26 @@ def main():
     html_content = requests.get(url).text
 
     # Parse the raw HTML content
-    soup = BeautifulSoup(html_content, 'html5lib')
+    soup = BeautifulSoup(html_content, "html5lib")
 
-    # Get the second table from the HTML content
-    table = soup.find_all('table')[1]
+    # Get the table from the HTML content
+    table = soup.find_all("table")[1]
 
     # Get all rows from the table
-    table_data = table.find_all('tr')
+    table_data = table.find_all("tr")
 
-    # Request weather data from each
     for row in table_data:
 
         # Get state capital from current row
-        row_data = row.find_all('th')
+        row_data = row.find_all("th")
         state_capital = row_data[0].get_text(strip=True)  # Strip newlines and spaces from string
 
         # Skip header and footer row
-        if ((state_capital == 'State') or (state_capital == '[19]')):
+        if ((state_capital == "State") or (state_capital == "[19]")):
             continue
 
+        # Print weather data for current capital
         city_data(state_capital)
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
