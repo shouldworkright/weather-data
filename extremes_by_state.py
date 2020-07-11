@@ -1,15 +1,10 @@
 # Import libraries
+import re
 import requests
 import pandas as pd
 from datetime import datetime
 from bs4 import BeautifulSoup
 from config import ow_api_key, zip_api_key
-
-'''
-    TODO:
-    - Error correction on user input
-    - Fix timeour error
-'''
 
 # Prints OpenWeather API data for a specified U.S. city
 def city_data(city_name):
@@ -237,13 +232,48 @@ def all_state_abbrevs():
         # Get cells from current table row
         cells = row.findAll("td")
 
-        # Skips initial row with improper formatting
+        # Skips initial row of table
         if len(cells) == 2:
             state_abbrev = cells[0].text.strip()  # 2-letter state abbreviation
             state_full = cells[1].text.strip()  # Full state name
 
             print("\t" + state_abbrev + " -> " + state_full)
+
     return
+
+# Returns true if passed abbreviation belongs to a U.S. state
+def state_abbrev_check(state_abbrev):
+
+    # URL for web-scraping text data
+    url = "https://simple.wikipedia.org/wiki/U.S._postal_abbreviations"
+
+    # Fetch and parse raw HTML content from the URL
+    html_content = requests.get(url).text
+    soup = BeautifulSoup(html_content, "html5lib")
+
+    # Get table of states and abbreviations from HTML content
+    table = soup.find_all("table")[0]
+
+    # Get all rows from the table
+    table_data = table.find_all("tr")
+
+    # Initialize current state abbreviation being pulled from the web page
+    state_abbrev_web = ""
+
+    for row in table_data:
+
+        # Get cells from current table row
+        cells = row.findAll("td")
+
+        # Get 2-letter state abbreviation from current row
+        if len(cells) == 2:
+            state_abbrev_web = cells[0].text.strip()
+
+        # If there is a match, return True
+        if state_abbrev_web == state_abbrev:
+            return True
+
+    return False
 
 # Returns name and temperature of a ZIP code
 def name_and_temp(zip_code):
@@ -315,12 +345,22 @@ def geo_forecast(latitude, longitude):
 def main():
 
     print("\n\tMOST EXTREME WEATHER BY U.S. STATE")
-    print("\n\tSearchable State Abbreviations:")
+    print("\n\tSearchable States:")
     all_state_abbrevs()
 
-    # Prompt user to enter chosen state
-    state_abbrev = input("\n\tSearch State By Abbreviation: ")
-    state_abbrev = state_abbrev.upper()
+    # Prompt user to enter search a state
+    while True:
+        state_abbrev = input("\n\tSearch State By Abbreviation: ")
+        state_abbrev = state_abbrev.upper()
+        state_abbrev_match = re.match("[A-Za-z]{2}", state_abbrev)
+
+        # Check for valid user input
+        if state_abbrev_match == None:
+            print("\n\tERROR: Please select a valid state.")
+        elif state_abbrev_check(state_abbrev) == False:
+            print("\n\tERROR: Please select a valid state.")
+        else:
+            break
 
     # Create an array of all ZIP codes for user-input state
     zip_codes = get_zips(state_abbrev)
